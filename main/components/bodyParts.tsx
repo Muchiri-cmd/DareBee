@@ -1,5 +1,6 @@
 import { bodyParts } from '@/constants/contants'
 import { Image } from 'expo-image'
+import { useRouter } from 'expo-router'
 import React, { useMemo, useState } from 'react'
 import { FlatList, StyleSheet, Text, TouchableOpacity, View } from 'react-native'
 import { heightPercentageToDP as hp, widthPercentageToDP as wp } from 'react-native-responsive-screen'
@@ -38,6 +39,8 @@ const plans: Plan[] = [
 ]
 
 const BodyParts = () => {
+    const router = useRouter()
+
   const [activePart, setActivePart] = useState<BodyPart>(bodyParts[0])
   const [activeGoal, setActiveGoal] = useState<Goal>(goals[0])
   const [activePlan, setActivePlan] = useState<Plan>(plans[0])
@@ -106,7 +109,15 @@ const BodyParts = () => {
         }}
       />
 
-      <View style={styles.focusCard}>
+      <TouchableOpacity
+        activeOpacity={0.8}
+        onPress={() => router.push({
+          pathname: '/exercises',
+          params: { 
+            bodyPart: activePart.name
+          }
+        })}
+        style={styles.focusCard}>
         <View style={styles.focusImageWrapper}>
           <Image
             source={activePart.img}
@@ -123,7 +134,7 @@ const BodyParts = () => {
             Curated home workouts to train your {activePart.name}.
           </Text>
         </View>
-      </View>
+      </TouchableOpacity>
 
       <View style={styles.sectionHeader}>
         <Text style={styles.title}>Custom plans</Text>
