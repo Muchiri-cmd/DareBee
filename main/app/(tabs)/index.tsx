@@ -1,17 +1,19 @@
 import Screen from '@/components/Screen'
 import { LinearGradient } from 'expo-linear-gradient'
+import { useRouter } from 'expo-router'
 import React from 'react'
 import { Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native'
 import Animated, { FadeIn, FadeInDown, FadeInUp } from 'react-native-reanimated'
 import { heightPercentageToDP as hp, widthPercentageToDP as wp } from 'react-native-responsive-screen'
 
 const index = () => {
+  const router = useRouter()
   return (
     <Screen statusBarStyle="dark">
       <View style={styles.container}>
         <Image 
           style={styles.welcome_img} 
-          source={require('../../assets/images/man11.jpg')}
+          source={require('../../assets/images/slide1.jpg')}
           resizeMode="cover"
         />
         <LinearGradient 
@@ -73,6 +75,7 @@ const index = () => {
             <TouchableOpacity 
               style={styles.primaryButton}
               activeOpacity={0.8}
+              onPress={() => router.replace('/(tabs)/home')}
             >
               <Text style={styles.primaryButtonText}>Get Started</Text>
               <View style={styles.buttonArrow}>
