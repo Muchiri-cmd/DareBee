@@ -1,20 +1,32 @@
-import { View, StyleSheet } from "react-native";
-import React from "react";
-import { ReactNode } from "react";
+import { StatusBar } from "expo-status-bar";
+import React, { ReactNode } from "react";
+import { StyleSheet } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 type ScreenProps = {
   children: ReactNode;
+  backgroundColor?: string;
+  statusBarStyle?: 'auto' | 'inverted' | 'light' | 'dark';
 };
 
-export default function Screen({ children }: ScreenProps) {
-  return <View style={styles.container}>{children}</View>;
+export default function Screen({ 
+  children, 
+  backgroundColor = '#FFFFFF',
+  statusBarStyle = 'dark'
+}: ScreenProps) {
+  return (
+    <>
+      <StatusBar style={statusBarStyle} />
+      <SafeAreaView style={[styles.container, { backgroundColor }]}>
+        {children}
+      </SafeAreaView>
+    </>   
+  );
 }
 
 const styles = StyleSheet.create({
-    container: {
-      flex: 1,
-      padding: 16,           
-      marginTop:50
-    },
-  });
+  container: {
+    flex: 1,         
+  },
+});
   
