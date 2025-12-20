@@ -11,109 +11,129 @@ import { ActivityIndicator, ScrollView, StyleSheet, Text, TouchableOpacity, View
 import { heightPercentageToDP as hp, widthPercentageToDP as wp } from 'react-native-responsive-screen'
 import { getExercisesByBodyPart } from '../../api/api'
 
-
 const Exercises = () => {
-    const [exercises, setExercises] = useState<any[]>([]);
-    const [loading, setLoading] = useState(true);
-    const { bodyPart } = useLocalSearchParams<{ bodyPart: string }>();
-    const router = useRouter();
-  
-    const selectedBodyPart = bodyParts.find(
-      (bp) => bp.name.toLowerCase() === bodyPart?.toLowerCase()
-    );
-  
-    useEffect(() => {
-      if (selectedBodyPart) {
-        fetchExercisesWithGifs(selectedBodyPart);
-      }
-    }, [selectedBodyPart]);
-  
-    const fetchExercisesWithGifs = async (selectedBodyPart: any) => {
-      setLoading(true);
-      try {
-        const exercisesData = await getExercisesByBodyPart(selectedBodyPart);
-  
-        const exercisesWithGifs = await Promise.all(
-          exercisesData.map(async (exercise: any) => {
-            try {
-              const response = await axios.get('https://exercisedb.p.rapidapi.com/image', {
-                params: {
-                  resolution: '720',
-                  exerciseId: exercise.id,
-                },
-                headers: {
-                  'x-rapidapi-key': rapidAPIKey,
-                  'x-rapidapi-host': 'exercisedb.p.rapidapi.com',
-                },
-              });
-  
-              return { ...exercise, gifUrl: response.data.gifUrl };
-    
-            } catch (error) {
-              console.warn(`Failed to fetch GIF for ${exercise.name}:`, error);
-              return exercise; 
-            }
-          })
-        );
-  
-        setExercises(exercisesWithGifs);
-      } catch (error) {
-        console.error('Error fetching exercises:', error);
-        setExercises([]);
-      } finally {
-        setLoading(false);
-      }
-    };
-  
-    return (
-      <Screen statusBarStyle="dark">
-        <ScrollView
-          style={{ flex: 1 }}
-          contentContainerStyle={{ paddingBottom: 20 }}
-          showsVerticalScrollIndicator={false}
-        >
-          {selectedBodyPart ? (
-            <>
+  const [exercises, setExercises] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+  const { bodyPart } = useLocalSearchParams<{ bodyPart: string }>()
+  const router = useRouter()
+
+  const selectedBodyPart = bodyParts.find(
+    (bp) => bp.name.toLowerCase() === bodyPart?.toLowerCase()
+  )
+
+  useEffect(() => {
+    if (selectedBodyPart) {
+      fetchExercisesWithGifs(selectedBodyPart)
+    }
+  }, [selectedBodyPart])
+
+  const fetchGifAsBase64 = async (exerciseId: string): Promise<string | null> => {
+    try {
+      const response = await axios.get('https://exercisedb.p.rapidapi.com/image', {
+        params: {
+          resolution: '720',
+          exerciseId: exerciseId,
+        },
+        headers: {
+          'x-rapidapi-key': rapidAPIKey,
+          'x-rapidapi-host': 'exercisedb.p.rapidapi.com',
+        },
+        responseType: 'arraybuffer',
+      })
+
+      const base64 = btoa(
+        new Uint8Array(response.data).reduce(
+          (data, byte) => data + String.fromCharCode(byte),
+          ''
+        )
+      )
+      
+      return `data:image/gif;base64,${base64}`
+    } catch (error) {
+      console.warn(`Failed to fetch GIF for exercise ${exerciseId}:`, error)
+      return null
+    }
+  }
+
+  const fetchExercisesWithGifs = async (selectedBodyPart: any) => {
+    setLoading(true)
+    try {
+      const exercisesData = await getExercisesByBodyPart(selectedBodyPart)
+
+      const exercisesWithGifs = await Promise.all(
+        exercisesData.map(async (exercise: any) => {
+          const gifBase64 = await fetchGifAsBase64(exercise.id)
+          return { 
+            ...exercise, 
+            gifUrl: gifBase64
+          }
+        })
+      )
+
+      const successCount = exercisesWithGifs.filter(e => e.gifUrl).length
+      
+      setExercises(exercisesWithGifs)
+    } catch (error) {
+      console.error('Error fetching exercises:', error)
+      setExercises([])
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  return (
+    <Screen statusBarStyle="dark">
+      <ScrollView
+        style={styles.scrollView}
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+      >
+        {selectedBodyPart ? (
+          <>
+            <View style={styles.headerRow}>
               <TouchableOpacity
                 onPress={() => router.back()}
-                style={{ margin: 16 }}
+                style={styles.backButton}
                 activeOpacity={0.7}
               >
                 <Ionicons name="chevron-back" size={24} color="#0066CC" />
               </TouchableOpacity>
-  
-              <View style={{ paddingHorizontal: 16 }}>
-                <Text style={{ fontSize: 24, fontWeight: '700', marginBottom: 12 }}>
+              
+              <View style={styles.headerContent}>
+                <Text style={styles.title}>
                   {selectedBodyPart.name.charAt(0).toUpperCase() + selectedBodyPart.name.slice(1)} Exercises
                 </Text>
-  
-                <View style={{ height: 200, marginBottom: 16 }}>
-                  <Image
-                    source={selectedBodyPart.img}
-                    style={{ width: '100%', height: '100%', borderRadius: 16 }}r
-                  />
-                </View>
-  
-                {loading ? (
-                  <View style={{ alignItems: 'center', marginTop: 40 }}>
-                    <ActivityIndicator size="large" color="#0066CC" />
-                    <Text style={{ marginTop: 12 }}>Loading exercises...</Text>
-                  </View>
-                ) : (
-                  <ExerciseList exercises={exercises} />
-                )}
               </View>
-            </>
-          ) : (
-            <View style={{ alignItems: 'center', marginTop: 80 }}>
-              <Text style={{ fontSize: 18, color: '#FF0000' }}>Body part not found</Text>
             </View>
-          )}
-        </ScrollView>
-      </Screen>
-    );
-  };
-  
+
+            <View style={styles.imageContainer}>
+              <Image
+                source={selectedBodyPart.img}
+                style={styles.image}
+                contentFit="cover"
+              />
+            </View>
+
+            {loading ? (
+              <View style={styles.loadingContainer}>
+                <ActivityIndicator size="large" color="#0066CC" />
+                <Text style={styles.loadingText}>Loading exercises and animations...</Text>
+              </View>
+            ) : (
+              <View style={styles.exerciseContainer}>
+                <ExerciseList exercises={exercises} />
+              </View>
+            )}
+          </>
+        ) : (
+          <View style={styles.errorContainer}>
+            <Text style={styles.errorText}>Body part not found</Text>
+          </View>
+        )}
+      </ScrollView>
+    </Screen>
+  )
+}
 
 export default Exercises
 
@@ -125,6 +145,13 @@ const styles = StyleSheet.create({
   scrollContent: {
     paddingBottom: hp(4),
   },
+  headerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: wp(5),
+    paddingTop: hp(2),
+    marginBottom: hp(2),
+  },
   backButton: {
     width: 40,
     height: 40,
@@ -132,30 +159,21 @@ const styles = StyleSheet.create({
     backgroundColor: '#F0F7FF',
     justifyContent: 'center',
     alignItems: 'center',
-    marginLeft: wp(5),
-    marginTop: hp(2),
-    marginBottom: hp(1),
+    marginRight: wp(3),
   },
-  header: {
-    paddingHorizontal: wp(5),
-    marginBottom: hp(2),
+  headerContent: {
+    flex: 1,
   },
   title: {
-    fontSize: hp(3),
+    fontSize: hp(2.6),
     fontWeight: '700',
     color: '#111827',
-    marginBottom: 4,
     letterSpacing: -0.5,
   },
-  subtitle: {
-    fontSize: hp(1.6),
-    color: '#6B7280',
-    fontWeight: '400',
-  },
   imageContainer: {
-    width: '100%',
+    width: wp(90),
     height: hp(25),
-    marginHorizontal: wp(5),
+    alignSelf: 'center',
     marginBottom: hp(3),
     borderRadius: 24,
     overflow: 'hidden',

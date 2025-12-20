@@ -9,7 +9,6 @@ import { heightPercentageToDP as hp, widthPercentageToDP as wp } from 'react-nat
 const ExerciseDetails = () => {
   const { exercise } = useLocalSearchParams<{ exercise: string }>()
   
-  // Parse the exercise data
   const exerciseData = exercise ? JSON.parse(exercise as string) : null
 
   if (!exerciseData) {
@@ -31,7 +30,6 @@ const ExerciseDetails = () => {
   return (
     <Screen statusBarStyle="dark">
       <View style={styles.container}>
-        {/* Header */}
         <View style={styles.header}>
           <TouchableOpacity
             onPress={() => router.back()}
@@ -54,20 +52,22 @@ const ExerciseDetails = () => {
             ).join(' ')}
           </Text>
 
-          {/* Exercise Image/GIF */}
-          {exerciseData.gifUrl && (
-            <View style={styles.imageContainer}>
+          <View style={styles.imageContainer}>
+            {exerciseData.gifUrl ? (
               <Image
                 source={{ uri: exerciseData.gifUrl }}
                 style={styles.image}
                 contentFit="contain"
               />
-            </View>
-          )}
+            ) : (
+              <View style={styles.placeholderContainer}>
+                <Ionicons name="image-outline" size={48} color="#9CA3AF" />
+                <Text style={styles.placeholderText}>No animation available</Text>
+              </View>
+            )}
+          </View>
 
-          {/* Content */}
           <View style={styles.content}>
-            {/* Instructions */}
             <View style={styles.section}>
               <Text style={styles.sectionTitle}>INSTRUCTIONS</Text>
               {exerciseData.instructions && exerciseData.instructions.length > 0 ? (
@@ -83,7 +83,6 @@ const ExerciseDetails = () => {
               )}
             </View>
 
-            {/* Target & Equipment Info */}
             {(exerciseData.target || exerciseData.equipment) && (
               <View style={styles.section}>
                 {exerciseData.target && (
@@ -109,7 +108,6 @@ const ExerciseDetails = () => {
               </View>
             )}
 
-            {/* Common Mistakes */}
             <View style={styles.section}>
               <Text style={styles.sectionTitle}>COMMON MISTAKES</Text>
               <View style={styles.mistakeItem}>
@@ -143,7 +141,6 @@ const ExerciseDetails = () => {
           </View>
         </ScrollView>
 
-        {/* Close Button */}
         <View style={styles.closeButtonContainer}>
           <TouchableOpacity 
             style={styles.closeButton}
@@ -200,6 +197,17 @@ const styles = StyleSheet.create({
   image: {
     width: '100%',
     height: '100%',
+  },
+  placeholderContainer: {
+    width: '100%',
+    height: '100%',
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 8,
+  },
+  placeholderText: {
+    fontSize: hp(1.6),
+    color: '#9CA3AF',
   },
   content: {
     paddingHorizontal: wp(5),
